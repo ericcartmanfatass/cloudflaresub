@@ -120,7 +120,6 @@ function parseRawLinks(input) {
       result.push(parseUrlLike(line, 'trojan'));
       continue;
     }
-    // Try decode base64 subscription containing multiple lines.
     try {
       const decoded = b64DecodeUtf8(line);
       if (/^(vmess|vless|trojan):\/\//m.test(decoded)) {
@@ -205,73 +204,74 @@ function encodeTrojan(node) {
 }
 
 function renderRaw(nodes) {
-  const lines = nodes.map((node) => {
-    if (node.type === 'vmess') return encodeVmess(node);
-    if (node.type === 'vless') return encodeVless(node);
-    if (node.type === 'trojan') return encodeTrojan(node);
-    return '';
-  }).filter(Boolean);
+  const lines = nodes
+    .map((node) => {
+      if (node.type === 'vmess') return encodeVmess(node);
+      if (node.type === 'vless') return encodeVless(node);
+      if (node.type === 'trojan') return encodeTrojan(node);
+      return '';
+    })
+    .filter(Boolean);
   return b64EncodeUtf8(lines.join('\n'));
 }
 
 function renderClash(nodes) {
-  const proxies = nodes.map((node) => {
-    if (node.type === 'vmess') {
-      return [
-        `  - name: "${escapeYaml(node.name)}"`,
-        `    type: vmess`,
-        `    server: ${node.server}`,
-        `    port: ${node.port}`,
-        `    uuid: ${node.uuid}`,
-        `    alterId: 0`,
-        `    cipher: ${node.cipher || 'auto'}`,
-        `    tls: ${node.tls ? 'true' : 'false'}`,
-        `    network: ${node.network || 'ws'}`,
-        `    servername: "${escapeYaml(node.sni || '')}"`,
-        `    ws-opts:`,
-        `      path: "${escapeYaml(node.path || '/')}"`,
-        `      headers:`,
-        `        Host: "${escapeYaml(node.host || '')}"`,
-      ].join('\n');
-    }
-    if (node.type === 'vless') {
-      return [
-        `  - name: "${escapeYaml(node.name)}"`,
-        `    type: vless`,
-        `    server: ${node.server}`,
-        `    port: ${node.port}`,
-        `    uuid: ${node.uuid}`,
-        `    tls: ${node.tls ? 'true' : 'false'}`,
-        `    network: ${node.network || 'ws'}`,
-        `    servername: "${escapeYaml(node.sni || '')}"`,
-        `    ws-opts:`,
-        `      path: "${escapeYaml(node.path || '/')}"`,
-        `      headers:`,
-        `        Host: "${escapeYaml(node.host || '')}"`,
-      ].join('\n');
-    }
-    if (node.type === 'trojan') {
-      return [
-        `  - name: "${escapeYaml(node.name)}"`,
-        `    type: trojan`,
-        `    server: ${node.server}`,
-        `    port: ${node.port}`,
-        `    password: "${escapeYaml(node.password || '')}"`,
-        `    sni: "${escapeYaml(node.sni || '')}"`,
-        `    network: ${node.network || 'ws'}`,
-        `    ws-opts:`,
-        `      path: "${escapeYaml(node.path || '/')}"`,
-        `      headers:`,
-        `        Host: "${escapeYaml(node.host || '')}"`,
-      ].join('\n');
-    }
-    return '';
-  }).filter(Boolean);
+  const proxies = nodes
+    .map((node) => {
+      if (node.type === 'vmess') {
+        return [
+          `  - name: "${escapeYaml(node.name)}"`,
+          `    type: vmess`,
+          `    server: ${node.server}`,
+          `    port: ${node.port}`,
+          `    uuid: ${node.uuid}`,
+          `    alterId: 0`,
+          `    cipher: ${node.cipher || 'auto'}`,
+          `    tls: ${node.tls ? 'true' : 'false'}`,
+          `    network: ${node.network || 'ws'}`,
+          `    servername: "${escapeYaml(node.sni || '')}"`,
+          `    ws-opts:`,
+          `      path: "${escapeYaml(node.path || '/')}"`,
+          `      headers:`,
+          `        Host: "${escapeYaml(node.host || '')}"`,
+        ].join('\n');
+      }
+      if (node.type === 'vless') {
+        return [
+          `  - name: "${escapeYaml(node.name)}"`,
+          `    type: vless`,
+          `    server: ${node.server}`,
+          `    port: ${node.port}`,
+          `    uuid: ${node.uuid}`,
+          `    tls: ${node.tls ? 'true' : 'false'}`,
+          `    network: ${node.network || 'ws'}`,
+          `    servername: "${escapeYaml(node.sni || '')}"`,
+          `    ws-opts:`,
+          `      path: "${escapeYaml(node.path || '/')}"`,
+          `      headers:`,
+          `        Host: "${escapeYaml(node.host || '')}"`,
+        ].join('\n');
+      }
+      if (node.type === 'trojan') {
+        return [
+          `  - name: "${escapeYaml(node.name)}"`,
+          `    type: trojan`,
+          `    server: ${node.server}`,
+          `    port: ${node.port}`,
+          `    password: "${escapeYaml(node.password || '')}"`,
+          `    sni: "${escapeYaml(node.sni || '')}"`,
+          `    network: ${node.network || 'ws'}`,
+          `    ws-opts:`,
+          `      path: "${escapeYaml(node.path || '/')}"`,
+          `      headers:`,
+          `        Host: "${escapeYaml(node.host || '')}"`,
+        ].join('\n');
+      }
+      return '';
+    })
+    .filter(Boolean);
 
-  return [
-    'proxies:',
-    ...proxies,
-  ].join('\n');
+  return ['proxies:', ...proxies].join('\n');
 }
 
 function renderSurge(nodes, baseUrl, accessToken) {
@@ -283,6 +283,7 @@ function renderSurge(nodes, baseUrl, accessToken) {
       }
       return `${node.name} = trojan, ${node.server}, ${node.port}, password=${node.password || ''}, sni=${node.sni || ''}`;
     });
+
   return [
     '[General]',
     'skip-proxy = 127.0.0.1, localhost',
@@ -291,7 +292,11 @@ function renderSurge(nodes, baseUrl, accessToken) {
     ...proxies,
     '',
     '[Proxy Group]',
-    'Proxy = select, ' + nodes.filter((n) => n.type === 'vmess' || n.type === 'trojan').map((n) => n.name).join(', '),
+    'Proxy = select, ' +
+      nodes
+        .filter((n) => n.type === 'vmess' || n.type === 'trojan')
+        .map((n) => n.name)
+        .join(', '),
     '',
     '[Rule]',
     'FINAL,Proxy',
@@ -311,13 +316,40 @@ function createShortId(length = 10) {
   return out;
 }
 
-async function createUniqueShortId(env, tries = 5) {
+async function createUniqueShortId(env, tries = 8) {
   for (let i = 0; i < tries; i++) {
     const id = createShortId(10);
-    const exists = await env.SUB_STORE.get(id);
+    const exists = await env.SUB_STORE.get(`sub:${id}`);
     if (!exists) return id;
   }
   throw new Error('无法生成唯一短链接，请稍后再试');
+}
+
+function normalizeLines(value = '') {
+  return String(value)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .sort()
+    .join('\n');
+}
+
+async function sha256Hex(input) {
+  const data = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(digest)]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function buildDedupHash(body) {
+  const normalized = {
+    nodeLinks: normalizeLines(body.nodeLinks || ''),
+    preferredIps: normalizeLines(body.preferredIps || ''),
+    namePrefix: String(body.namePrefix || '').trim(),
+    keepOriginalHost: body.keepOriginalHost !== false,
+  };
+  return sha256Hex(JSON.stringify(normalized));
 }
 
 async function handleGenerate(request, env, url) {
@@ -334,30 +366,44 @@ async function handleGenerate(request, env, url) {
   if (!baseNodes.length) return json({ ok: false, error: '没有识别到可用节点' }, 400);
   if (!preferredEndpoints.length) return json({ ok: false, error: '没有识别到可用优选地址' }, 400);
 
-  const nodes = buildNodes(baseNodes, preferredEndpoints, {
+  const options = {
     namePrefix: body.namePrefix || '',
     keepOriginalHost: body.keepOriginalHost !== false,
-  });
+  };
 
-  const id = await createUniqueShortId(env);
+  const nodes = buildNodes(baseNodes, preferredEndpoints, options);
+
   const payload = {
     version: 1,
     createdAt: new Date().toISOString(),
-    options: {
-      namePrefix: body.namePrefix || '',
-      keepOriginalHost: body.keepOriginalHost !== false,
-    },
+    options,
     nodes,
   };
-  await env.SUB_STORE.put(id, JSON.stringify(payload));
+
+  const dedupHash = await buildDedupHash(body);
+  const dedupKey = `dedup:${dedupHash}`;
+
+  let id = await env.SUB_STORE.get(dedupKey);
+
+  if (!id) {
+    id = await createUniqueShortId(env);
+    await env.SUB_STORE.put(`sub:${id}`, JSON.stringify(payload));
+    await env.SUB_STORE.put(dedupKey, id);
+  }
 
   const origin = url.origin;
   const accessToken = env.SUB_ACCESS_TOKEN || '';
-  const withToken = (target) => `${origin}/sub/${id}${target ? `?target=${target}&token=${encodeURIComponent(accessToken)}` : `?token=${encodeURIComponent(accessToken)}`}`;
+  const withToken = (target) =>
+    `${origin}/sub/${id}${
+      target
+        ? `?target=${target}&token=${encodeURIComponent(accessToken)}`
+        : `?token=${encodeURIComponent(accessToken)}`
+    }`;
 
   return json({
     ok: true,
     storage: 'kv',
+    deduplicated: true,
     shortId: id,
     urls: {
       auto: withToken(''),
@@ -399,8 +445,9 @@ async function handleSub(url, env) {
   const id = url.pathname.split('/').pop();
   if (!id) return text('missing id', 400);
 
-  const raw = await env.SUB_STORE.get(id);
+  const raw = await env.SUB_STORE.get(`sub:${id}`);
   if (!raw) return text('not found', 404);
+
   const record = JSON.parse(raw);
   const nodes = record.nodes || [];
   const target = (url.searchParams.get('target') || 'raw').toLowerCase();
@@ -409,7 +456,11 @@ async function handleSub(url, env) {
     return text(renderClash(nodes), 200, 'text/yaml; charset=utf-8');
   }
   if (target === 'surge') {
-    return text(renderSurge(nodes, url.origin + url.pathname, env.SUB_ACCESS_TOKEN || ''), 200, 'text/plain; charset=utf-8');
+    return text(
+      renderSurge(nodes, url.origin + url.pathname, env.SUB_ACCESS_TOKEN || ''),
+      200,
+      'text/plain; charset=utf-8',
+    );
   }
   return text(renderRaw(nodes), 200, 'text/plain; charset=utf-8');
 }
